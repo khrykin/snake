@@ -17,7 +17,7 @@ def draw(
 	pad_size = 1.0,
 	pads_neck_size = 0.2,
 
-	number_of_loops = 250,
+	number_of_loops = 200,
 	snake_thickness = 0.005, # 5 um
 	snake_loop_margin = 0.5,
 	snake_pads_offset = 0.5
@@ -128,6 +128,54 @@ def draw(
 			origin
 		]
 
+	left_pads_points = pads_points((PADS_ORIGIN_X, 0))
+	right_pads_points = pads_points((PADS_ORIGIN_X + PADS_GROUP_SIZE + PADS_GAP_SIZE, 0))
+	
+	# Left lead wire
+	left_lead_points = [
+		left_pads_points[4],
+		left_pads_points[3],
+		(snake_main_loop[1][0], snake_main_loop[1][1] + pads_neck_size),
+		(
+			snake_main_loop[2][0] + pads_neck_size, 
+			snake_main_loop[2][1] + pads_neck_size
+			),
+		(
+			snake_main_loop[2][0] + 2 * snake_thickness, 
+			snake_main_loop[2][1] + (snake_loop_margin - pads_neck_size / 2)
+		),
+		(
+			snake_main_loop[2][0] - 2 * snake_thickness,
+			snake_main_loop[2][1] + (snake_loop_margin - pads_neck_size / 2)
+		),
+		(
+			snake_main_loop[2][0] - 2 * snake_thickness,
+			snake_main_loop[2][1]
+		),
+		(
+			snake_main_loop[1][0] - pads_neck_size,
+			snake_main_loop[1][1]
+		),
+		(
+			snake_main_loop[0][0] - pads_neck_size,
+			snake_main_loop[0][1]
+		),
+		(left_pads_points[2][0] - pad_size, left_pads_points[2][1]),
+		left_pads_points[4]
+	]
+
+	# Reflects points along x axis
+	def reflect_x(points, x_axis):
+		return list(map(lambda point: 
+			(2 * x_axis - point[0], point[1]),
+			points
+		))
+
+	right_lead_points = reflect_x(
+		left_lead_points, 
+		left_lead_points[1][0] + PADS_GAP_SIZE / 2
+	)
+
 	# MARK: - Drawing objects
 
 	substrate = dxf.polyline(
@@ -145,14 +193,26 @@ def draw(
 	)
 
 	left_pads = dxf.polyline(
-		pads_points((PADS_ORIGIN_X, 0)),
+		left_pads_points,
 		layer=Layers.pads,
 		flags=0
 	)
 
 	right_pads = dxf.polyline(
-		pads_points((PADS_ORIGIN_X + PADS_GROUP_SIZE + PADS_GAP_SIZE, 0)),
+		right_pads_points,
 		layer=Layers.pads,
+		flags=0
+	)
+
+	left_leads = dxf.polyline(
+		left_lead_points,
+		layer=Layers.snake,
+		flags=0
+	)
+
+	right_leads = dxf.polyline(
+		right_lead_points,
+		layer=Layers.snake,
 		flags=0
 	)
 
@@ -169,5 +229,11 @@ def draw(
 
 	# Right pads
 	drawing.add(right_pads)
+
+	# Left leads
+	drawing.add(left_leads)
+	
+	# Right leads
+	drawing.add(right_leads)
 
 	drawing.save()
